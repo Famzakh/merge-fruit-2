@@ -390,6 +390,59 @@ function drawDashedLine() {
     }
 }
 
+function draw() {
+    background("#EAC696");
+    ground.display();
+    movehand();
+    ellipse(handpos[0], handpos[1], 10, 10);
+
+    if (fruitinhand) {
+        fruitinhand.display();
+    }
+
+    for (let index = 0; index < fruits.length; index++) {
+        fruits[index].display();
+    }
+
+    if (fruits.length >= 2) {
+        checkCollisions(fruits);
+    }
+
+    displayscore();
+
+    if (findObjectWithLowestY(fruits) < 200) {
+        drawDashedLine();
+    }
+
+    if (findObjectWithLowestY(fruits) < 150) {
+        playing = false;
+        console.log("Game Over");
+    }
+}
+
+function keyPressed() {
+    if (playing) {
+        if (key === ' ') {
+            fruitinhand.isfixed = false;
+            fruits.push(fruitinhand);
+            assignfruitinhand();
+        }
+    }
+    
+    if (!playing && key === 'S') {
+        restartGame();
+    }
+}
+
+function restartGame() {
+    playing = true;
+    score = 0;
+    fruits = [];
+    Matter.World.clear(engine.world);
+    assignfruitinhand();
+    console.log("Game Restarted");
+}
+
 
 function findObjectWithLowestY(fruits) {
     if (fruits.length === 0) {
