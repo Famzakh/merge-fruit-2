@@ -100,6 +100,7 @@ let score = 0
 let handpos = [canvasBox.offsetWidth / 2, 70]
 
 let playing = true
+let nextFruit;
 
 
 function preload() {
@@ -162,54 +163,26 @@ function setup() {
 
 }
 
-function draw() {
-    background("#EAC696");
-
-    ground.display()
-
-    movehand()
-    // display hand
-    ellipse(handpos[0], handpos[1], 10, 10);
-
-    // display fruit in hand
-    if (fruitinhand) {
-        fruitinhand.display()
+function displaynextfruit() {
+    if (nextFruit) {
+        const xx = width - 30;
+        const yy = 30 ;
+        const size = 50;
+    
+        // Hiển thị hình ảnh
+        push(); // Lưu trạng thái hiện tại của canvas
+        imageMode(CENTER); // Đặt chế độ hiển thị hình ảnh tại tâm
+        image(nextFruit.image, xx, yy, size, size); // Hiển thị hình ảnh
+        pop(); // Khôi phục lại trạng thái trước đó của canvas
+    
+        // Vẽ khung bao quanh
+        noFill();
+        stroke(0);
+        strokeWeight(2);
+        rectMode(CENTER);
+        rect(xx, yy, size + 10, size + 10);
     }
-
-    // display fruits in the game
-    for (let index = 0; index < fruits.length; index++) {
-        fruits[index].display()
     }
-
-    // check for collisions
-    if (fruits.length >= 2) {
-        checkCollisions(fruits)
-    }
-
-    // display score
-    displayscore()
-
-
-
-    // if fruits are getting closer draw the line
-    if (findObjectWithLowestY(fruits) < 200) {
-        // draw line
-        drawDashedLine()
-    }
-
-    // if fruits are getting closer draw the line
-    if (findObjectWithLowestY(fruits) < 150) {
-        // gameover
-        // disable controls
-        // playing = false
-        // show gae over message
-
-    }
-
-
-
-}
-
 function movehand() {
     if (playing) {
         if (keyIsDown(LEFT_ARROW)) {
@@ -224,26 +197,30 @@ function movehand() {
     }
 }
 
-function keyPressed() {
-    if (playing) {
-        if (key === ' ') {
-            // release the inhand fruit
-            fruitinhand.isfixed = false
-            // move fruit in hand to fruits array
-            fruits.push(fruitinhand)
-            // assign new fruit in hand
-
-            assignfruitinhand()
-        }
-    }
-}
-
 function assignfruitinhand() {
-    // choose a number beween 0 and 2
-    let rannum = floor(random(4))
-    //  console.log(rannum)
-    fruitinhand = new Fruit(engine.world, rannum); // Replace Fruit with your object
+    // Nếu có trái cây tiếp theo, sử dụng nó
+    if (nextFruit) {
+        fruitinhand = nextFruit; // Gán trái cây tiếp theo cho fruitinhand
+        console.log("Assigned nextFruit to fruitinhand:", fruitinhand);
+    } else {
+        // Nếu không có trái cây tiếp theo, tạo ngẫu nhiên
+        let rannum = floor(random(4));
+        fruitinhand = new Fruit(engine.world, rannum);
+        console.log("Created new fruitinhand:", fruitinhand);
+    }
 
+    // Tạo trái cây tiếp theo mới
+    assignNextFruit();
+    console.log("Next fruit after assignment:", nextFruit);
+}
+function assignNextFruit() {
+    let rannum = floor(random(4)); // Chọn ngẫu nhiên một số từ 0 đến 3
+    console.log("Next fruit assigned with level:", rannum); // Kiểm tra trái cây tiếp theo
+    nextFruit = new Fruit(engine.world, rannum); // Tạo trái cây tiếp theo
+    nextFruit.isfixed = true; // Đảm bảo trái cây tiếp theo không rơi xuống
+    nextFruit.image = fruitsdata[rannum].image;
+    console.log("Next fruit object:", nextFruit); // Kiểm tra đối tượng nextFruit
+    console.log("Next fruit image:", nextFruit.image); // Kiểm tra hình ảnh của nextFruit
 }
 
 // function checkCollisions(objects) {
@@ -390,59 +367,6 @@ function drawDashedLine() {
     }
 }
 
-function draw() {
-    background("#EAC696");
-    ground.display();
-    movehand();
-    ellipse(handpos[0], handpos[1], 10, 10);
-
-    if (fruitinhand) {
-        fruitinhand.display();
-    }
-
-    for (let index = 0; index < fruits.length; index++) {
-        fruits[index].display();
-    }
-
-    if (fruits.length >= 2) {
-        checkCollisions(fruits);
-    }
-
-    displayscore();
-
-    if (findObjectWithLowestY(fruits) < 200) {
-        drawDashedLine();
-    }
-
-    if (findObjectWithLowestY(fruits) < 150) {
-        playing = false;
-        console.log("Game Over");
-    }
-}
-
-function keyPressed() {
-    if (playing) {
-        if (key === ' ') {
-            fruitinhand.isfixed = false;
-            fruits.push(fruitinhand);
-            assignfruitinhand();
-        }
-    }
-    
-    if (!playing && key === 'S') {
-        restartGame();
-    }
-}
-
-function restartGame() {
-    playing = true;
-    score = 0;
-    fruits = [];
-    Matter.World.clear(engine.world);
-    assignfruitinhand();
-    console.log("Game Restarted");
-}
-
 
 function findObjectWithLowestY(fruits) {
     if (fruits.length === 0) {
@@ -463,4 +387,115 @@ function findObjectWithLowestY(fruits) {
     }
 
     return lowestYObject.body.position.y;
+}
+
+fruits1 = [];
+let gameOver = false;
+const limitLineY = 150; // Vạch giới hạn trên
+let timeAboveLimit = 0;
+const timeLimit = 3000; // 3 giây
+
+function draw() {
+    background("#EAC696");
+
+    ground.display()
+
+    movehand()
+    // display hand
+    ellipse(handpos[0], handpos[1], 10, 10);
+
+    // display fruit in hand
+    if (fruitinhand) {
+        fruitinhand.display()
+    }
+
+    // display fruits in the game
+    for (let index = 0; index < fruits.length; index++) {
+        fruits[index].display()
+    }
+
+    // check for collisions
+    if (fruits.length >= 2) {
+        checkCollisions(fruits)
+    }
+
+    // display score
+    displayscore()
+
+    // if fruits are getting closer draw the line
+    if (findObjectWithLowestY(fruits) < 200) {
+        // draw line
+        drawDashedLine()
+    }
+
+    // Check if any fruit is above the limit
+    if (findObjectWithLowestY(fruits) < 150) {
+        if (!gameOver) {
+            timeAboveLimit += deltaTime;
+            if (timeAboveLimit >= timeLimit) {
+                gameOver = true;
+                playing = false;
+                displayGameOver();
+            }
+        }
+    } else {
+        timeAboveLimit = 0; // Reset the timer if no fruit is above the limit
+    }
+
+    // Display game over message
+    if (gameOver) {
+        displayGameOver();
+    }
+    displaynextfruit();
+}
+
+function displayGameOver() {
+    fill(255, 0, 0);
+    textSize(60);
+    textAlign(CENTER, CENTER);
+    text("GAME OVER", width / 2, height / 2);
+    textSize(30);
+    text("Press R to Restart", width / 2, height / 2 + 50);
+}
+
+function keyPressed() {
+    if (playing) {
+        if (key === ' ') {
+            // release the inhand fruit
+            fruitinhand.isfixed = false
+            // move fruit in hand to fruits array
+            fruits.push(fruitinhand)
+            // assign new fruit in hand
+            assignfruitinhand()
+        }
+    }
+
+    // Restart the game when 'r' or 'R' is pressed
+    if (key === 'r' || key === 'R') {
+        restartGame();
+    }
+}
+
+function restartGame() {
+    // Reset game state
+    gameOver = false;
+    playing = true;
+    timeAboveLimit = 0;
+    score = 0;
+
+    // Remove all fruits from the world
+    for (let i = fruits.length - 1; i >= 0; i--) {
+        Matter.World.remove(engine.world, fruits[i].body);
+        fruits.splice(i, 1);
+    }
+
+    // Remove the fruit in hand
+    if (fruitinhand) {
+        Matter.World.remove(engine.world, fruitinhand.body);
+        fruitinhand = null;
+    }
+
+    // Assign a new fruit in hand
+    assignfruitinhand();
+    assignNextFruit();
 }
